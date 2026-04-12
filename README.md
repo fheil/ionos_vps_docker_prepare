@@ -30,7 +30,7 @@ You can test with the following command:
 
 > ansible -i inventory.ini all -m command -a "id foo" --become
 
-Replace foo with your username.
+Replace `foo` with your username.
 
 ### apb_ionos_030__aliases_global.yml
 A list of aliases. The aliases go to /etc/profile.d/profile.local.sh. The playbook checks existence of entries to avoid duplicate entries.
