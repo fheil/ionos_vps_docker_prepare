@@ -1,0 +1,27 @@
+---
+# This playbook deploys Joe's Own Editor joe and Midnight Commander mc
+
+- name: set up docker & compose
+  hosts: srv
+  become: true
+
+  tasks:
+    - name: update package index
+      apt:
+        name: "*"
+        state: latest
+        update_cache: true
+        force_apt_get: true
+
+    - name: add basic work packages
+      apt:
+        name: "{{ packagesdep }}"
+        update_cache: true
+        force_apt_get: true
+        state: latest
+      vars:
+        packagesdep:
+          - joe
+          - mc
+          - lynx
+          - tree
