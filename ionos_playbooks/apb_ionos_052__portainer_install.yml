@@ -1,4 +1,5 @@
-me: Install Portainer CE (Community Edition)
+---
+-name: Install Portainer CE (Community Edition)
   hosts: srv
   become: true
 
