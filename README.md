@@ -32,7 +32,7 @@ You can test with the following command:
 
 Replace `foo` with your username.
 
-## apb_ionos_022__sudoer_user.yml
+### apb_ionos_022__sudoer_user.yml
 adds user to sudoers file, so no password is needed with sudo
 
 ### apb_ionos_030__aliases_global.yml
