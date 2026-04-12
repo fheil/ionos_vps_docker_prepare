@@ -4,11 +4,14 @@
   become: yes
   vars:
     # empty default (will be replaced through  inventory.yml)
-    username: ""
-    user_password_hash: ""
-    user_ssh_key: ""
-    delete_user_first: false
+    username: "{{ hostvars[inventory_hostname]['username'] }}"
+    user_password_hash: "{{ hostvars[inventory_hostname]['user_password_hash'] }}"
+    user_ssh_key: "{{ hostvars[inventory_hostname]['user_ssh_key'] | default('') }}"
+    delete_user_first: "{{ hostvars[inventory_hostname]['delete_user_first'] | bool }}"
   tasks:
+    #- name: "Debug: Show all variables"
+      #ansible.builtin.debug:
+        #var: hostvars[inventory_hostname]
     - name: "Delete '{{ username }}' (if delete_user_first=true)"
       ansible.builtin.user:
         name: "{{ username }}"
