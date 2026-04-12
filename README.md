@@ -39,5 +39,5 @@ Installs [Portainer Community Edition (CE)](https://docs.portainer.io/start/inst
 ### ansible.cfg
 Config-file with `remote_user` and `private_key_file` definitions.
 
-### inventory.yml
-Example inventory file. To avoid conflicts, it is recommended to create a copy, such as `ionos_inventory`, and use this copy with an ansible playbook. This will prevent conflicts with the version on GitHub.
+### inventory.yml.example
+Example inventory file. Use this for your inventory.yml (inventory.yml and inventory.ini are in .gitignore). Do not use the example with your playbooks
