@@ -1,0 +1,58 @@
+me: Install Portainer CE (Community Edition)
+  hosts: srv
+  become: true
+
+  vars:
+    portainer_port: 9443
+    portainer_data_dir: /var/lib/portainer
+    portainer_user: "1000"  # UID des Docker-Benutzers (standardmäßig 1000 auf Ubuntu)
+    portainer_group: "1000" # GID der Docker-Gruppe
+
+  tasks:
+    # 1. Datenverzeichnis mit korrekten Berechtigungen erstellen
+    - name: Create Portainer data directory
+      ansible.builtin.file:
+        path: "{{ portainer_data_dir }}"
+        state: directory
+        mode: '0750'  # Nur Besitzer (1000) und Gruppe dürfen lesen/schreiben
+        owner: "{{ portainer_user }}"
+        group: "{{ portainer_group }}"
+
+    # 2. Portainer-Image herunterladen
+    - name: Pull Portainer CE Docker image
+      community.docker.docker_image:
+        name: portainer/portainer-ce:latest
+        source: pull
+        state: present
+
+    # 3. Portainer-Container erstellen (mit User 1000)
+    - name: Create Portainer container
+      community.docker.docker_container:
+        name: portainer
+        image: portainer/portainer-ce:latest
+        state: started
+        restart_policy: unless-stopped
+        ports:
+          - "{{ portainer_port }}:9443"
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock:ro  # Read-only für Sicherheit
+          - "{{ portainer_data_dir }}:/data:rw"  # Persistente Daten mit Schreibrechten
+        user: "{{ portainer_user }}:{{ portainer_group }}"  # Container läuft als User 1000
+        command: --http-disabled  # Erzwingt HTTPS
+        detach: true
+      register: portainer_container
+
+    # 4. Wartezeit für Initialisierung
+    - name: Wait for Portainer to initialize (30s)
+      ansible.builtin.pause:
+        seconds: 30
+      when: portainer_container.changed
+
+    # 5. Zugriffsinformationen ausgeben
+    - name: Print Portainer access info
+      ansible.builtin.debug:
+        msg: |
+          Portainer CE is now running!
+          Access the Web UI at: https://{{ ansible_host }}:{{ portainer_port }}
+          Initial admin password must be set on first login.
+          Data directory: {{ portainer_data_dir }} (owned by UID {{ portainer_user }})
