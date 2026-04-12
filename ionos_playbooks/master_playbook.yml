@@ -1,5 +1,5 @@
 ---
-- import_playbook: apb_ionos_000_upd.yml
+- import_playbook: apb_ionos_000__upd.yml
 - import_playbook: apb_ionos_010__mandatory.yml
 - import_playbook: apb_ionos_020__create_user.yml
 - import_playbook: apb_ionos_030__aliases_global.yml
