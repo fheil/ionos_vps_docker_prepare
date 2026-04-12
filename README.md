@@ -28,7 +28,7 @@ Either you have to place your vars `username`, `user_password_hash`, `user_ssh_k
 
 You can test with the following command:
 
-> ansible -i inventory.ini all -m command -a "id foo" --become
+> ansible -i inventory.yml all -m command -a "id foo" --become
 
 Replace `foo` with your username.
 
@@ -40,6 +40,10 @@ Installs docker to Ubuntu according to the [Docker Docs](https://docs.docker.com
 
 ### apb_ionos_052__portainer_install.yml
 Installs [Portainer Community Edition (CE)](https://docs.portainer.io/start/install-ce) (according to the time of writing this).
+
+You can test with the following command:
+
+> ansible -i inventory.ini all -m command -a "docker ps" --become
 
 ## Other files
 ### ansible.cfg
