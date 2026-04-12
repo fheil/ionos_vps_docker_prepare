@@ -18,13 +18,19 @@ Add (my favored/)mandatory necessary packages.
 ### apb_ionos_020__create_user.yml
 Playbook to create the non-root user, start it before adding users, so that user become user-id 1000, group-id 1000, what might be important for alle the following playbooks or even bash-scripts (there might be some in the future).
 
-Either you have to place your vars `username`, `user_password_hash`, `user_ssh_key` and `delete_user_first` in the playbook or call the playbook like this:
+Either you have to place your vars `username`, `user_password_hash`, `user_ssh_key` and `delete_user_first` in the `inventory.yml` (recommended), the playbook directly or call the playbook like this:
 
 > ansible-playbook apb_ionos_020__create_user.yml -i inventory.ini \
 >  -e "username=foo" \
 >  -e "user_password_hash='$6$83b6....'" \
 >  -e "user_ssh_key='ssh-ed25519 AAA...'" \
 >  -e "delete_user_first=true"
+
+You can test with the following command:
+
+> ansible -i inventory.ini all -m command -a "id foo" --become
+
+Replace foo with your username.
 
 ### apb_ionos_030__aliases_global.yml
 A list of aliases. The aliases go to /etc/profile.d/profile.local.sh. The playbook checks existence of entries to avoid duplicate entries.
