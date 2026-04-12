@@ -43,7 +43,7 @@ Installs [Portainer Community Edition (CE)](https://docs.portainer.io/start/inst
 
 You can test with the following command:
 
-> ansible -i inventory.ini all -m command -a "docker ps" --become
+> ansible -i inventory.yml all -m command -a "docker ps" --become
 
 ## Other files
 ### ansible.cfg
