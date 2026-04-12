@@ -1,0 +1,7 @@
+---
+- import_playbook: apb_ionos_000_upd.yml
+- import_playbook: apb_ionos_010__mandatory.yml
+- import_playbook: apb_ionos_020__create_user.yml
+- import_playbook: apb_ionos_030__aliases_global.yml
+- import_playbook: apb_ionos_050__dockersetup.yml
+- import_playbook: apb_ionos_052__portainer_install.yml
