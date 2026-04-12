@@ -1,0 +1,93 @@
+---
+# This playbook adds my aliases to /etc/profile
+
+- name: add aliases
+  hosts: srv
+  become: true
+  vars:
+    profile_local_path: "/etc/profile.d/profile.local.sh"
+
+  tasks:
+    - name: check if "{{profile_local_path}}" exists
+      stat:
+        path: "{{profile_local_path}}"
+      register: stat_result
+
+    - name: create the file, if it doesnt exist already
+      file:
+        path: "{{profile_local_path}}"
+        state: touch
+      when: not stat_result.stat.exists
+
+    - name: set PATH so it includes users private bin if it exists
+      blockinfile:
+        path: "{{profile_local_path}}"
+        insertbefore: BOF
+        marker: "## {mark} ANSIBLE MANAGED BLOCK - include bin in PATH"
+        owner: root
+        mode: '0644'
+        block: |
+          if [ -d "$HOME/bin" ] ; then
+            PATH="$HOME/bin:$PATH"
+          fi
+        state: present
+
+    - name: comment begin of own alias defs
+      lineinfile:
+        path: "{{profile_local_path}}"
+        regexp: "^#[BEGIN] fhh - (?!('own alias definitions'))\b"
+        line: "#[BEGIN] fhh - own alias definitions"
+
+    - name: check/add alias rmtilde
+      lineinfile:
+        path: "{{profile_local_path}}"
+        regexp: "^alias rmtilde=(?!('rm *~ .*~ -i'))\b"
+        line: "alias rmtilde='rm *~ .*~ -i'"
+
+    - name: check/add alias vml
+      lineinfile:
+        path: "{{profile_local_path}}"
+        regexp: "^alias vml=(?!('tail -f /var/log/syslog'))\b"
+        line: "alias vml='tail -f /var/log/syslog'"
+
+    - name: check/add alias cd..
+      lineinfile:
+        path: "{{profile_local_path}}"
+        regexp: "^cd...=(?!('cd ..'))\b"
+        line: "alias cd..='cd ..'"
+
+    - name: check/add alias nob
+      lineinfile:
+        path: "{{profile_local_path}}"
+        regexp: "^alias nob=(?!('chown nobody.nogroup -v'))\b"
+        line: "alias nob='chown nobody.nogroup -v'"
+
+    - name: check/add alias dir
+      lineinfile:
+        path: "{{profile_local_path}}"
+        regexp: "^alias dir=(?!('ls -al'))\b"
+        line: "alias dir='ls -al'"
+
+    - name: check/add alias sx
+      lineinfile:
+        path: "{{profile_local_path}}"
+        regexp: "^alias sx=(?!('sudo su -'))\b"
+        line: "alias sx='sudo su -'"
+
+    - name: check/add alias upd
+      vars:
+        line_var: >
+          alias upd='sudo apt update && sudo apt -y upgrade &&
+          sudo apt full-upgrade && sudo apt dist-upgrade &&
+          sudo apt autoremove'
+      lineinfile:
+        path: "{{profile_local_path}}"
+        regexp: "{{line_var}}"
+        # regexp: "^alias upd=(?!({{line_var}}))\b"
+        line: "{{line_var}}"
+
+    - name: comment end of own alias defs
+      lineinfile:
+        path: "{{profile_local_path}}"
+        regexp: "^#[END] fhh - (?!('own alias definitions'))\b"
+        line: "#[END] fhh - own alias definitions"
