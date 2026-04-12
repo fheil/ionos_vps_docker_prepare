@@ -1,6 +1,8 @@
 # ionos_vps_docker_prepare
 Get IONOS VPS Linux (Ubuntu) ready to update all packages, create user "foo" with sudo, install some essential packages, install docker and portainer.
 
+The VPS is called `vps-foo` with IP `127.0.0.1` in this README and the examples.
+
 ## List of ansible playbooks:
 
 ### master_playbook.yml
