@@ -1,0 +1,33 @@
+---
+- name: "Add sudoers rules for users (dynamic)"
+  hosts: all
+  become: true
+  vars:
+    # Dynamische Variablen aus der Inventory laden
+    username: "{{ hostvars[inventory_hostname]['username'] }}"
+    sudoer_prefix: "020"  # Präfix für die Sudoers-Datei (z. B. "020_frank")
+    sudoer_dir: "/etc/sudoers.d"
+    sudoer_path: "{{ sudoer_dir }}/{{ sudoer_prefix }}_{{ username }}"  # Kombiniert
+
+  tasks:
+    - name: "Check if sudoers file exists for {{ username }}"
+      ansible.builtin.stat:
+        path: "{{ sudoer_path }}"
+      register: sudoer_stat
+
+    - name: "Create sudoers file for {{ username }}"
+      ansible.builtin.file:
+        path: "{{ sudoer_path }}"
+        state: touch
+        mode: "0440"  # Wichtig: Sudoers-Dateien müssen 0440 sein!
+        owner: root
+        group: root
+      when: not sudoer_stat.stat.exists
+
+    - name: "Add NOPASSWD rule for {{ username }}"
+      ansible.builtin.lineinfile:
+        path: "{{ sudoer_path }}"
+        regexp: "^{{ username }} ALL = \\(ALL\\) NOPASSWD: ALL\\b"
+        line: "{{ username }} ALL = (ALL) NOPASSWD: ALL"
+        validate: "visudo -cf %s"  # Syntaxprüfung!
+        mode: "0440"
