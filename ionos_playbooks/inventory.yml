@@ -1,0 +1,15 @@
+---
+all:
+  hosts:
+    vps-foo:
+      ansible_ssh_host: 127.0.0.1
+      ansible_ssh_user: ansible
+      # ansible_python_interpreter: /usr/bin/python3
+
+  children:
+    srv:
+      hosts:
+        vps-foo:
+    cli:
+      hosts:
+        vps-foo:
