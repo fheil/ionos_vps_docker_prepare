@@ -3,13 +3,11 @@
   hosts: all
   become: yes
   vars:
-    # Standardbenutzer (wird überschrieben, falls Variable gesetzt)
-    username: "foo"  # Platzhalter, wird später dynamisch ersetzt
-    user_password_hash: "$6$rounds=656000$salz$hashed_password_here"  # REPLACE this!
-    # Optional: SSH-Public-Key für user (z. B. aus ~/.ssh/id_rsa.pub)
-    user_ssh_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQ..."  # REPLACE this!
-    delete_user_first: false  # Standard: false (kein Löschen)
-
+    # empty default (will be replaced through  inventory.yml)
+    username: ""
+    user_password_hash: ""
+    user_ssh_key: ""
+    delete_user_first: false
   tasks:
     - name: "Delete '{{ username }}' (if delete_user_first=true)"
       ansible.builtin.user:
