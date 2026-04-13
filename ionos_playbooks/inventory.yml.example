@@ -7,6 +7,8 @@ all:
       # ansible_python_interpreter: /usr/bin/python3
       # user variables for vps-foo:
       username: "alice"  # Überschreibt den Standardwert "foo"
+      username_uid: "1000"  # ← Optional (Standard: 1000)
+      username_gid: "1000"  # ← Optional (Standard: 1000)
       user_password_hash: "$6$rounds=656000$salz$hashed_password_here"  # REPLACE with YOUR Hash!
       user_ssh_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA..."  # REPLACE with YOUR SSH-Key
       delete_user_first: true  # Löscht den Benutzer vorher (optional)
