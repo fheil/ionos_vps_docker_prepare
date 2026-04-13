@@ -5,7 +5,7 @@
   vars:
     # Dynamische Variablen aus der Inventory laden
     username: "{{ hostvars[inventory_hostname]['username'] }}"
-    sudoer_prefix: "020"  # Präfix für die Sudoers-Datei (z. B. "020_frank")
+    sudoer_prefix: "020"  # Präfix für die Sudoers-Datei (z. B. "020_alice")
     sudoer_dir: "/etc/sudoers.d"
     sudoer_path: "{{ sudoer_dir }}/{{ sudoer_prefix }}_{{ username }}"  # Kombiniert
 
