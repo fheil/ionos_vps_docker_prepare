@@ -3,15 +3,16 @@
   hosts: all
   become: yes
   vars:
-    # empty default (will be replaced through  inventory.yml)
+    # Dynamische Variablen aus inventory.yml (mit Fallback auf Standardwerte)
     username: "{{ hostvars[inventory_hostname]['username'] }}"
     user_password_hash: "{{ hostvars[inventory_hostname]['user_password_hash'] }}"
     user_ssh_key: "{{ hostvars[inventory_hostname]['user_ssh_key'] | default('') }}"
     delete_user_first: "{{ hostvars[inventory_hostname]['delete_user_first'] | bool }}"
+    # Dynamische UID/GID (Standard: 1000)
+    username_uid: "{{ hostvars[inventory_hostname]['username_uid'] | default(1000) }}"
+    username_gid: "{{ hostvars[inventory_hostname]['username_gid'] | default(1000) }}"
+
   tasks:
-    #- name: "Debug: Show all variables"
-      #ansible.builtin.debug:
-        #var: hostvars[inventory_hostname]
     - name: "Delete '{{ username }}' (if delete_user_first=true)"
       ansible.builtin.user:
         name: "{{ username }}"
@@ -19,28 +20,30 @@
         remove: yes
       when: delete_user_first
 
-    - name: "Adduser '{{ username }}'"
+    - name: "Ensure group with GID {{ username_gid }} exists"
+      ansible.builtin.group:
+        name: "{{ username }}"  # Gruppe benennen wie den Benutzer (oder festen Namen wählen)
+        gid: "{{ username_gid }}"
+        state: present
+        
+    - name: "Adduser '{{ username }}' with dynamic UID/GID and Docker group"
       ansible.builtin.user:
         name: "{{ username }}"
         password: "{{ user_password_hash }}"
         shell: /bin/bash
         home: "/home/{{ username }}"
+        uid: "{{ username_uid }}"        # ← Dynamische UID
+        group: "{{ username_gid }}"      # ← Dynamische GID
         groups: sudo
-        append: yes
+        append: yes                      # ← Gruppen nicht überschreiben
         state: present
         create_home: yes
         comment: "Admin Account for {{ username }}"
+        # SSH-Key wird separat im nächsten Task hinzugefügt (nicht hier!)
 
     - name: "Add SSH-Key for '{{ username }}' (optional)"
       ansible.builtin.authorized_key:
         user: "{{ username }}"
         key: "{{ user_ssh_key }}"
         state: present
-      when: user_ssh_key | length > 0  # Führt die Aufgabe nur aus, wenn user_ssh_key nicht leer ist
-
-    - name: "Allow sudo with NO password for '{{ username }}' (optional)"
-      ansible.builtin.lineinfile:
-        path: /etc/sudoers
-        line: "{{ username }} ALL=(ALL) NOPASSWD:ALL"
-        validate: "visudo -cf %s"
-      when: "'sudo' in group_names"
+      when: user_ssh_key | length > 0
