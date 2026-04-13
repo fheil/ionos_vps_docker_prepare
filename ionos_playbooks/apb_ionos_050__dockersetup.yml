@@ -2,6 +2,9 @@
 - name: Set up Docker & Compose on Ubuntu 24.04 (Deb822 format)
   hosts: srv
   become: true
+  vars:
+    # Dynamische Variablen aus inventory.yml (mit Fallback auf Standardwerte)
+    username: "{{ hostvars[inventory_hostname]['username'] }}"
 
   tasks:
     - name: Update package index
@@ -77,6 +80,13 @@
           - docker-compose-plugin
         state: latest
 
+    - name: "Add user '{{ username }}' to group 'docker'"
+      ansible.builtin.user:
+        name: "{{ username }}"
+        groups: docker
+        append: yes  # Fügt die Gruppe hinzu, ohne bestehende Gruppen zu entfernen
+        state: present
+        
     - name: Ensure Docker is running
       ansible.builtin.service:
         name: docker
