@@ -2,12 +2,13 @@
 - name: Install Portainer CE (Community Edition)
   hosts: srv
   become: true
-  
+
   vars:
     portainer_port: 9443
     portainer_data_dir: /var/lib/portainer
-    portainer_user: "1000"  # UID des Docker-Benutzers (standardmäßig 1000 auf Ubuntu)
-    portainer_group: "1000" # GID der Docker-Gruppe
+    # Dynamische UID/GID aus dem Inventory laden (falls definiert)
+    portainer_user: "{{ hostvars[inventory_hostname]['username_uid'] | default('1000') }}"
+    portainer_group: "{{ hostvars[inventory_hostname]['username_gid'] | default('1000') }}"
 
   tasks:
     # 1. Datenverzeichnis mit korrekten Berechtigungen erstellen
@@ -15,7 +16,7 @@
       ansible.builtin.file:
         path: "{{ portainer_data_dir }}"
         state: directory
-        mode: '0750'  # Nur Besitzer (1000) und Gruppe dürfen lesen/schreiben
+        mode: '0750'  # Nur Besitzer (UID) und Gruppe dürfen lesen/schreiben
         owner: "{{ portainer_user }}"
         group: "{{ portainer_group }}"
 
@@ -26,7 +27,7 @@
         source: pull
         state: present
 
-    # 3. Portainer-Container erstellen (mit User 1000)
+    # 3. Portainer-Container erstellen (mit dynamischer UID/GID)
     - name: Create Portainer container
       community.docker.docker_container:
         name: portainer
@@ -38,7 +39,7 @@
         volumes:
           - /var/run/docker.sock:/var/run/docker.sock:ro  # Read-only für Sicherheit
           - "{{ portainer_data_dir }}:/data:rw"  # Persistente Daten mit Schreibrechten
-        user: "{{ portainer_user }}:{{ portainer_group }}"  # Container läuft als User 1000
+        user: "{{ portainer_user }}:{{ portainer_group }}"  # Container läuft mit dynamischer UID/GID
         command: --http-disabled  # Erzwingt HTTPS
         detach: true
       register: portainer_container
