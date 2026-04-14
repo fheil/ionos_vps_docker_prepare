@@ -6,7 +6,8 @@ all:
       ansible_ssh_user: ansible
       # ansible_python_interpreter: /usr/bin/python3
       # user variables for vps-foo:
-      username: "alice"  # Überschreibt den Standardwert "foo"
+      host_root_uid: 0      # Optional: Falls nicht gesetzt, wird Default (0) verwendet
+      username: "alice"     # Überschreibt den Standardwert "foo"
       username_uid: "1000"  # ← Optional (Standard: 1000)
       username_gid: "1000"  # ← Optional (Standard: 1000)
       user_password_hash: "$6$rounds=656000$salz$hashed_password_here"  # REPLACE with YOUR Hash!
