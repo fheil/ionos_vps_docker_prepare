@@ -1,33 +1,46 @@
 ---
-- name: Install Portainer CE (Community Edition)
+- name: Install Portainer CE (Community Edition) with dynamic docker GID
   hosts: srv
   become: true
 
   vars:
     portainer_port: 9443
     portainer_data_dir: /var/lib/portainer
-    # Dynamische UID/GID aus dem Inventory laden (falls definiert)
+    # Dynamische UID/GID aus dem Inventory (mit Fallback)
     portainer_user: "{{ hostvars[inventory_hostname]['username_uid'] | default('1000') }}"
     portainer_group: "{{ hostvars[inventory_hostname]['username_gid'] | default('1000') }}"
+    host_root_uid: "{{ hostvars[inventory_hostname]['host_root_uid'] | default('0') }}"
 
   tasks:
-    # 1. Datenverzeichnis mit korrekten Berechtigungen erstellen
+    # 1. Dynamische GID der docker-Gruppe ermitteln
+    - name: Get docker group GID
+      ansible.builtin.getent:
+        database: group
+        key: docker
+      register: docker_group_info
+      changed_when: false
+
+    - name: Set docker_gid variable
+      ansible.builtin.set_fact:
+        docker_gid: "{{ docker_group_info.ansible_facts.getent_group['docker'][1] }}"
+
+    # 2. Datenverzeichnis erstellen
     - name: Create Portainer data directory
       ansible.builtin.file:
         path: "{{ portainer_data_dir }}"
         state: directory
-        mode: '0750'  # Nur Besitzer (UID) und Gruppe dürfen lesen/schreiben
+        mode: '0750'
         owner: "{{ portainer_user }}"
         group: "{{ portainer_group }}"
 
-    # 2. Portainer-Image herunterladen
+    # 3. Portainer-Image herunterladen
     - name: Pull Portainer CE Docker image
       community.docker.docker_image:
         name: portainer/portainer-ce:latest
         source: pull
         state: present
 
-    # 3. Portainer-Container erstellen (mit dynamischer UID/GID)
+    # 4. Portainer-Container erstellen (mit docker-GID)
     - name: Create Portainer container
       community.docker.docker_container:
         name: portainer
@@ -35,26 +48,28 @@
         state: started
         restart_policy: unless-stopped
         ports:
-          - "{{ portainer_port }}:9443"
+          - "127.0.0.1:{{ portainer_port }}:9443"  # Nur lokal für SSH-Tunnel
+          - "127.0.0.1:8000:8000"                  # Nur lokal für Edge-Agent
         volumes:
-          - /var/run/docker.sock:/var/run/docker.sock:ro  # Read-only für Sicherheit
-          - "{{ portainer_data_dir }}:/data:rw"  # Persistente Daten mit Schreibrechten
-        user: "{{ portainer_user }}:{{ portainer_group }}"  # Container läuft mit dynamischer UID/GID
-        command: --http-disabled  # Erzwingt HTTPS
+          - "/var/run/docker.sock:/var/run/docker.sock:ro"  # Read-only!
+          - "{{ portainer_data_dir }}:/data:rw"
+        user: "{{ host_root_uid }}:{{ docker_gid }}" # UID 0 (root) + dynamische docker-GID
+        command: --http-disabled
         detach: true
       register: portainer_container
 
-    # 4. Wartezeit für Initialisierung
-    - name: Wait for Portainer to initialize (30s)
+    # 5. Initialisierungswartezeit
+    - name: Wait for Portainer to initialize
       ansible.builtin.pause:
         seconds: 30
       when: portainer_container.changed
 
-    # 5. Zugriffsinformationen ausgeben
+    # 6. Zugriffsinformationen ausgeben
     - name: Print Portainer access info
       ansible.builtin.debug:
         msg: |
           Portainer CE is now running!
-          Access the Web UI at: https://{{ ansible_host }}:{{ portainer_port }}
-          Initial admin password must be set on first login.
-          Data directory: {{ portainer_data_dir }} (owned by UID {{ portainer_user }})
+          Access via SSH tunnel: ssh -L {{ portainer_port }}:localhost:{{ portainer_port }} {{ ansible_user }}@{{ ansible_host }}
+          Then open: https://localhost:{{ portainer_port }}
+          Data directory: {{ portainer_data_dir }} (UID {{ portainer_user }}:GID {{ portainer_group }})
+          Docker socket GID: {{ docker_gid }} (used in container)
