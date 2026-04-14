@@ -26,11 +26,19 @@
         block: |
           PROMPT_COMMAND='PS1=\
           `if test "$UID" = 0 ; then \
-            echo "\033[37;41;1;1m[\h]\033[0m\w # " ; \
+            echo "\033[37;45;1;1m[\h]\033[0m\w # " ; \
           else \
-            echo "\033[34;47;1;7m[\u@\h]\033[0m\w > " ; \
+            echo "\033[32;47;1;7m[\u@\h]\033[0m\w > " ; \
           fi `'
           export PROMPT_COMMAND
+        state: present
+
+    - name: ssh terminal color to dark blue
+      blockinfile:
+        path: "{{profile_local_path}}"
+        marker: "## {mark} ANSIBLE MANAGED BLOCK - dark blue background"
+        block: |
+          printf '\033]11;#192436\007'
         state: present
 
     - name: set PATH so it includes users private bin if it exists
