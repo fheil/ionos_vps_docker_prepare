@@ -1,17 +1,18 @@
 ---
-- name: Set up Docker & Compose on Ubuntu 24.04 (Deb822 format)
+- name: Set up Docker CE (exact match to your manual installation)
   hosts: srv
   become: true
   vars:
-    # Dynamische Variablen aus inventory.yml (mit Fallback auf Standardwerte)
-    username: "{{ hostvars[inventory_hostname]['username'] }}"
+    # Dynamische Variablen aus inventory.yml (mit Fallback)
+    username: "{{ hostvars[inventory_hostname]['username'] | default('foo') }}"
 
   tasks:
+    # 1. System vorbereiten
     - name: Update package index
       apt:
         update_cache: true
 
-    - name: Remove old Docker versions
+    - name: Remove old Docker versions (if any)
       apt:
         name:
           - docker.io
@@ -22,40 +23,43 @@
           - containerd
           - runc
         state: absent
+        autoremove: yes
 
-    - name: Install dependencies
+    - name: Install prerequisites
       apt:
         name:
           - ca-certificates
           - curl
           - gnupg
-        state: latest
+          - lsb-release
+        state: present
 
+    # 2. Docker-Repository einrichten
     - name: Create keyrings directory
-      ansible.builtin.file:
+      file:
         path: /etc/apt/keyrings
         state: directory
         mode: '0755'
 
     - name: Download Docker GPG key
-      ansible.builtin.get_url:
+      get_url:
         url: https://download.docker.com/linux/ubuntu/gpg
         dest: /etc/apt/keyrings/docker.asc
         mode: '0644'
 
-    - name: Get OS codename
-      ansible.builtin.command: >
+    - name: Get OS codename (Ubuntu/Debian)
+      command: >
         bash -c 'source /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}"'
       register: os_codename
       changed_when: false
 
     - name: Get system architecture
-      ansible.builtin.command: dpkg --print-architecture
+      command: dpkg --print-architecture
       register: os_architecture
       changed_when: false
 
     - name: Add Docker repository (Deb822 format)
-      ansible.builtin.copy:
+      copy:
         dest: /etc/apt/sources.list.d/docker.sources
         content: |
           Types: deb
@@ -66,11 +70,12 @@
           Signed-By: /etc/apt/keyrings/docker.asc
         mode: '0644'
 
+    # 3. Docker installieren
     - name: Update APT cache
       apt:
         update_cache: true
 
-    - name: Install Docker
+    - name: Install Docker CE packages
       apt:
         name:
           - docker-ce
@@ -78,17 +83,28 @@
           - containerd.io
           - docker-buildx-plugin
           - docker-compose-plugin
-        state: latest
+        state: present
 
-    - name: "Add user '{{ username }}' to group 'docker'"
-      ansible.builtin.user:
+    # 4. Benutzer zur docker-Gruppe hinzufügen
+    - name: Add user to docker group
+      user:
         name: "{{ username }}"
         groups: docker
-        append: yes  # Fügt die Gruppe hinzu, ohne bestehende Gruppen zu entfernen
-        state: present
-        
-    - name: Ensure Docker is running
-      ansible.builtin.service:
+        append: yes
+
+    # 5. Docker-Service starten
+    - name: Ensure Docker is running and enabled
+      service:
         name: docker
         state: started
         enabled: true
+
+    # 6. Optional: Docker-Version prüfen
+    - name: Verify Docker installation
+      command: docker --version
+      register: docker_version
+      changed_when: false
+
+    - name: Print Docker version
+      debug:
+        msg: "Docker installed: {{ docker_version.stdout }}"
