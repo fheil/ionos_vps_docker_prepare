@@ -26,3 +26,4 @@
           - lynx
           - tree
           - apache2-utils
+          - yamllint
